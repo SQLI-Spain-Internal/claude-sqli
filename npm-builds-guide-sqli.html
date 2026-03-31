@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>From Source to npm — How JavaScript Gets Built, Packed & Shipped</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sqli-cream: #FFFAF0;
+      --sqli-midnight: #0F0E2B;
+      --sqli-sky: #6DA5FF;
+      --sqli-cobalt: #1F24E9;
+
+      --bg: var(--sqli-cream);
+      --bg-card: #FFFFFF;
+      --bg-code: var(--sqli-midnight);
+      --border: #0F0E2B18;
+      --border-strong: #0F0E2B30;
+      --text: var(--sqli-midnight);
+      --text-muted: #0F0E2B88;
+      --accent: var(--sqli-cobalt);
+      --sky: var(--sqli-sky);
+      --sky-dim: #6DA5FF14;
+      --green: #1A7A4C;
+      --green-dim: #1A7A4C0C;
+      --red: #C92A2A;
+      --red-dim: #C92A2A0C;
+      --orange: #B35C00;
+      --orange-dim: #B35C000C;
+
+      --font-display: 'TWK Everett', 'DM Serif Display', Georgia, 'Times New Roman', serif;
+      --font-body: 'TWK Everett', 'Instrument Sans', Arial, sans-serif;
+      --font-mono: 'IBM Plex Mono', 'Consolas', 'Monaco', monospace;
+
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 2rem;
+      --space-xl: 3rem;
+      --space-2xl: 5rem;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      line-height: 1.75;
+      font-size: 16.5px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    ::selection {
+      background: var(--sqli-cobalt);
+      color: #fff;
+    }
+
+    /* ── Layout ── */
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: var(--space-lg) var(--space-lg) var(--space-2xl);
+    }
+
+    /* ── Header ── */
+    .hero {
+      padding: var(--space-2xl) 0 var(--space-xl);
+      position: relative;
+    }
+
+    .hero::after {
+      content: '';
+      display: block;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--sqli-midnight) 0%, var(--sqli-sky) 40%, transparent 100%);
+      margin-top: var(--space-xl);
+    }
+
+    .hero-org {
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--sqli-cobalt);
+      margin-bottom: var(--space-lg);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .hero-org::before {
+      content: '';
+      display: inline-block;
+      width: 24px;
+      height: 2px;
+      background: var(--sqli-cobalt);
+    }
+
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 5vw, 3.4rem);
+      font-weight: 400;
+      line-height: 1.12;
+      letter-spacing: -0.02em;
+      color: var(--sqli-midnight);
+      margin-bottom: var(--space-md);
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--sqli-cobalt);
+    }
+
+    .hero-sub {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 560px;
+      line-height: 1.7;
+    }
+
+    /* ── Table of Contents ── */
+    .toc {
+      margin-bottom: var(--space-xl);
+      padding: var(--space-lg) 0;
+      border-bottom: 1px solid var(--border-strong);
+    }
+
+    .toc-label {
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: var(--space-md);
+    }
+
+    .toc ol {
+      list-style: none;
+      counter-reset: toc;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.35rem var(--space-lg);
+    }
+
+    .toc li {
+      counter-increment: toc;
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+    }
+
+    .toc li::before {
+      content: counter(toc, decimal-leading-zero);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--sqli-sky);
+      flex-shrink: 0;
+    }
+
+    .toc a {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.92rem;
+      transition: color 0.15s;
+      border-bottom: 1px solid transparent;
+    }
+
+    .toc a:hover {
+      color: var(--sqli-cobalt);
+      border-bottom-color: var(--sqli-cobalt);
+    }
+
+    /* ── Chapters ── */
+    .chapter {
+      margin-bottom: var(--space-2xl);
+      scroll-margin-top: var(--space-lg);
+    }
+
+    .chapter-head {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      margin-bottom: var(--space-lg);
+      padding-bottom: var(--space-sm);
+      border-bottom: 2px solid var(--sqli-midnight);
+    }
+
+    .chapter-num {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--sqli-sky);
+      flex-shrink: 0;
+      position: relative;
+      top: -0.1em;
+    }
+
+    h2 {
+      font-family: var(--font-display);
+      font-size: 1.65rem;
+      font-weight: 400;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      border: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    h3 {
+      font-family: var(--font-body);
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-top: var(--space-lg);
+      margin-bottom: 0.6rem;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    h4 {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 1.25rem;
+      margin-bottom: 0.4rem;
+    }
+
+    p {
+      margin-bottom: var(--space-md);
+      color: var(--text);
+    }
+
+    a { color: var(--sqli-cobalt); text-decoration: none; border-bottom: 1px solid var(--sqli-cobalt); }
+    a:hover { border-bottom-color: transparent; }
+
+    strong { color: var(--text); font-weight: 600; }
+
+    /* ── Code ── */
+    pre {
+      background: var(--bg-code);
+      border-radius: 6px;
+      padding: 1.1rem 1.4rem;
+      overflow-x: auto;
+      margin-bottom: 1.4rem;
+      position: relative;
+      border: 1px solid #1a1940;
+    }
+
+    pre code {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      color: #d8dce6;
+    }
+
+    .code-label {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: #1a1940;
+      color: #ffffff70;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 0 6px 0 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      background: #0F0E2B0A;
+      color: var(--sqli-cobalt);
+      padding: 0.12em 0.38em;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+    }
+
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+    }
+
+    /* Syntax highlighting */
+    .kw { color: #ff7b72; }
+    .str { color: #a5d6ff; }
+    .cmt { color: #6b7280; font-style: italic; }
+    .fn { color: #c4b5fd; }
+    .num { color: #79c0ff; }
+    .op { color: #ff7b72; }
+    .key { color: #7ee787; }
+    .type { color: #ffa657; }
+    .dim { color: #6b7280; }
+    .accent { color: var(--sqli-sky); }
+    .green { color: #7ee787; }
+    .red { color: #ff7b72; }
+
+    /* ── Callouts ── */
+    .callout {
+      border-radius: 4px;
+      padding: 0.9rem 1.1rem;
+      margin-bottom: 1.4rem;
+      border-left: 3px solid;
+      font-size: 0.93rem;
+    }
+
+    .callout-info { background: var(--sky-dim); border-color: var(--sqli-sky); }
+    .callout-warning { background: var(--orange-dim); border-color: var(--orange); }
+    .callout-danger { background: var(--red-dim); border-color: var(--red); }
+    .callout-success { background: var(--green-dim); border-color: var(--green); }
+
+    .callout-label {
+      font-weight: 700;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.25rem;
+    }
+
+    .callout-info .callout-label { color: var(--sqli-cobalt); }
+    .callout-warning .callout-label { color: var(--orange); }
+    .callout-danger .callout-label { color: var(--red); }
+    .callout-success .callout-label { color: var(--green); }
+
+    .callout p:last-child { margin-bottom: 0; }
+
+    /* ── Diagrams ── */
+    .diagram {
+      background: var(--bg-code);
+      border: 1px solid #1a1940;
+      border-radius: 6px;
+      padding: 1.4rem;
+      margin-bottom: 1.4rem;
+      overflow-x: auto;
+    }
+
+    .diagram pre {
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .diagram-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--sqli-sky);
+      margin-bottom: 0.7rem;
+      font-weight: 600;
+    }
+
+    /* ── Tables ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1.4rem;
+      font-size: 0.88rem;
+    }
+
+    th {
+      text-align: left;
+      padding: 0.55rem 0.9rem;
+      background: var(--bg-code);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border: none;
+    }
+
+    th:first-child { border-radius: 4px 0 0 0; }
+    th:last-child { border-radius: 0 4px 0 0; }
+
+    td {
+      padding: 0.55rem 0.9rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: 1px solid var(--border-strong); }
+    tr:hover td { background: #FFFFFF60; }
+
+    /* ── Lists ── */
+    ul, ol {
+      margin-bottom: var(--space-md);
+      padding-left: 1.4rem;
+    }
+
+    li {
+      margin-bottom: 0.35rem;
+    }
+
+    li code {
+      font-size: 0.83em;
+    }
+
+    /* ── Flow ── */
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+      margin-bottom: 1.4rem;
+    }
+
+    .flow-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      padding: 0.5rem 0.9rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      text-align: center;
+      min-width: 90px;
+    }
+
+    .flow-box.highlight {
+      border-color: var(--sqli-sky);
+      background: var(--sky-dim);
+    }
+
+    .flow-box.danger {
+      border-color: var(--red);
+      background: var(--red-dim);
+    }
+
+    .flow-box.success {
+      border-color: var(--green);
+      background: var(--green-dim);
+    }
+
+    .flow-arrow {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      user-select: none;
+    }
+
+    /* ── Comparison ── */
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-md);
+      margin-bottom: 1.4rem;
+    }
+
+    .compare-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.1rem;
+    }
+
+    .compare-card h4 { margin-top: 0; margin-bottom: 0.4rem; }
+    .compare-card.good { border-top: 3px solid var(--green); }
+    .compare-card.bad { border-top: 3px solid var(--red); }
+
+    /* ── Steps ── */
+    .step {
+      display: flex;
+      gap: var(--space-md);
+      margin-bottom: 1.4rem;
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      background: var(--sqli-midnight);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #fff;
+      margin-top: 0.2rem;
+    }
+
+    .step-content { flex: 1; }
+    .step-content p:last-child { margin-bottom: 0; }
+
+    /* ── Tabs ── */
+    .tabs {
+      margin-bottom: 1.4rem;
+    }
+
+    .tab-buttons {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border-strong);
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 0.5rem 1.1rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.01em;
+    }
+
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active {
+      color: var(--sqli-cobalt);
+      border-bottom-color: var(--sqli-cobalt);
+    }
+
+    .tab-panel {
+      display: none;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      padding: 1.1rem 1.3rem;
+    }
+
+    .tab-panel.active { display: block; }
+    .tab-panel pre { margin-bottom: 0.6rem; }
+    .tab-panel pre:last-child { margin-bottom: 0; }
+    .tab-panel p:last-child { margin-bottom: 0; }
+
+    /* ── Footer ── */
+    .footer {
+      padding-top: var(--space-xl);
+      position: relative;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .footer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--sqli-midnight) 0%, var(--sqli-sky) 40%, transparent 100%);
+    }
+
+    .footer-left p { margin-bottom: 0.2rem; }
+
+    .footer-sqli {
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--sqli-midnight);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .hero h1 { font-size: 1.8rem; }
+      .toc ol { grid-template-columns: 1fr; }
+      .comparison { grid-template-columns: 1fr; }
+      .page { padding: var(--space-md); }
+      .flow { flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .footer { flex-direction: column; gap: var(--space-md); align-items: flex-start; }
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #0F0E2B22; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #0F0E2B44; }
+
+    /* ── Print ── */
+    @media print {
+      body { font-size: 11pt; }
+      .hero { padding: 1rem 0; }
+      pre, .diagram { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="hero-org">SQLI Software Engineering</div>
+    <h1>From Source <em>to npm</em></h1>
+    <p class="hero-sub">How JavaScript gets built, packed, and shipped &mdash; explained through a real-world case study of a leaked source map.</p>
+  </header>
+
+  <!-- TOC -->
+  <nav class="toc">
+    <div class="toc-label">Contents</div>
+    <ol>
+      <li><a href="#source-code">Source Code &mdash; What Developers Write</a></li>
+      <li><a href="#bundling">Bundling &mdash; Many Files Into One</a></li>
+      <li><a href="#sourcemaps">Source Maps &mdash; The Debugging Bridge</a></li>
+      <li><a href="#package-json">package.json &mdash; The Manifest</a></li>
+      <li><a href="#npm-pack">npm pack &mdash; What Goes in the Box</a></li>
+      <li><a href="#npm-publish">npm publish &mdash; Shipping to the World</a></li>
+      <li><a href="#npm-install">npm install &mdash; The Consumer Side</a></li>
+      <li><a href="#dependencies">Dependencies &mdash; The Dependency Graph</a></li>
+      <li><a href="#case-study">Case Study &mdash; The Claude Code Leak</a></li>
+      <li><a href="#prevention">Prevention &mdash; How to Not Leak Your Source</a></li>
+    </ol>
+  </nav>
+
+
+  <!-- Chapter 1: Source Code -->
+  <section class="chapter" id="source-code">
+    <div class="chapter-head">
+      <span class="chapter-num">01</span>
+      <h2>Source Code &mdash; What Developers Write</h2>
+    </div>
+
+    <p>Modern JavaScript/TypeScript projects are organized into hundreds or thousands of small files, each handling a specific concern:</p>
+
+    <pre><code><span class="dim">project/</span>
+<span class="dim">  src/</span>
+    <span class="accent">entrypoints/cli.tsx</span>       <span class="cmt"># Where the program starts</span>
+    <span class="accent">main.tsx</span>                   <span class="cmt"># Core application logic</span>
+    <span class="dim">tools/</span>
+      <span class="accent">BashTool/BashTool.tsx</span>   <span class="cmt"># One feature = one module</span>
+      <span class="accent">GrepTool/GrepTool.tsx</span>
+    <span class="dim">services/</span>
+      <span class="accent">api/claude.ts</span>           <span class="cmt"># API communication</span>
+    <span class="dim">components/</span>
+      <span class="accent">StatusLine.tsx</span>          <span class="cmt"># UI components</span>
+  <span class="dim">node_modules/</span>                  <span class="cmt"># Third-party dependencies (thousands of files)</span>
+  <span class="accent">package.json</span>                 <span class="cmt"># Project manifest</span>
+  <span class="accent">tsconfig.json</span>                <span class="cmt"># TypeScript configuration</span></code></pre>
+
+    <p><strong>TypeScript</strong> (<code>.ts</code>, <code>.tsx</code>) is a superset of JavaScript that adds static types. Browsers and Node.js can't run TypeScript directly &mdash; it must be <em>transpiled</em> to plain JavaScript first.</p>
+
+    <p><strong>JSX/TSX</strong> is a syntax extension that lets you write HTML-like markup in JavaScript. It's used with React and gets transformed into function calls:</p>
+
+    <pre><code><span class="cmt">// What you write (TSX)</span>
+<span class="kw">const</span> <span class="fn">StatusLine</span> = () =&gt; <span class="op">&lt;</span><span class="type">Box</span><span class="op">&gt;&lt;</span><span class="type">Text</span> color=<span class="str">"green"</span><span class="op">&gt;</span>Ready<span class="op">&lt;/</span><span class="type">Text</span><span class="op">&gt;&lt;/</span><span class="type">Box</span><span class="op">&gt;</span>;
+
+<span class="cmt">// What the bundler outputs (JS)</span>
+<span class="kw">const</span> <span class="fn">StatusLine</span> = () =&gt; <span class="fn">React.createElement</span>(<span class="type">Box</span>, <span class="num">null</span>,
+  <span class="fn">React.createElement</span>(<span class="type">Text</span>, { color: <span class="str">"green"</span> }, <span class="str">"Ready"</span>)
+);</code></pre>
+  </section>
+
+
+  <!-- Chapter 2: Bundling -->
+  <section class="chapter" id="bundling">
+    <div class="chapter-head">
+      <span class="chapter-num">02</span>
+      <h2>Bundling &mdash; Many Files Into One</h2>
+    </div>
+
+    <p>A <strong>bundler</strong> takes your entire source tree (your code + all dependencies) and produces a single output file that can run directly. Think of it as compiling, but for JavaScript.</p>
+
+    <div class="diagram">
+      <div class="diagram-label">The bundling process</div>
+      <pre><code><span class="dim">INPUT (4,756 files)</span>                    <span class="dim">OUTPUT (1 file)</span>
+
+src/entrypoints/cli.tsx  <span class="dim">──┐</span>
+src/main.tsx             <span class="dim">──┤</span>
+src/tools/BashTool.tsx   <span class="dim">──┤</span>
+src/services/api/*.ts    <span class="dim">──┤</span>          ┌──────────────────┐
+src/components/*.tsx     <span class="dim">──┼── <span class="accent">bundler</span> ──&gt;</span> │  <span class="accent">cli.js</span> (13 MB)   │
+node_modules/lodash-es/* <span class="dim">──┤</span>          │  16,667 lines     │
+node_modules/ink/*       <span class="dim">──┤</span>          └──────────────────┘
+node_modules/react/*     <span class="dim">──┤</span>
+<span class="dim">... 4,748 more files</span>     <span class="dim">──┘</span></code></pre>
+    </div>
+
+    <h3>What the bundler does</h3>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <p><strong>Resolves imports</strong> &mdash; Starting from the entry point, follows every <code>import</code> and <code>require()</code> statement recursively to discover all needed files.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <p><strong>Transpiles</strong> &mdash; Converts TypeScript to JavaScript, transforms JSX to function calls, and downgrades modern syntax for older Node.js versions if needed.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <p><strong>Inlines</strong> &mdash; Copies the code from every dependency directly into the output file. The result is self-contained with zero runtime dependencies.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <p><strong>Tree-shakes</strong> &mdash; Removes unused exports (dead code elimination). If you only use 3 functions from lodash, only those 3 end up in the bundle.</p>
+      </div>
+    </div>
+
+    <h3>Common bundlers</h3>
+
+    <table>
+      <thead>
+        <tr><th>Bundler</th><th>Speed</th><th>Used By</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Bun</strong></td><td>Very fast (Zig-based)</td><td>Claude Code</td></tr>
+        <tr><td><strong>esbuild</strong></td><td>Very fast (Go-based)</td><td>Vite (dev mode)</td></tr>
+        <tr><td><strong>webpack</strong></td><td>Slower, very configurable</td><td>Most older projects</td></tr>
+        <tr><td><strong>Rollup</strong></td><td>Medium, clean output</td><td>Libraries, Vite (prod)</td></tr>
+        <tr><td><strong>Turbopack</strong></td><td>Fast (Rust-based)</td><td>Next.js</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-info">
+      <div class="callout-label">Why bundle?</div>
+      <p>Without bundling, you'd need to ship your entire <code>node_modules</code> folder (often 500MB+) and all your source files. A bundle is smaller, faster to install, and has zero dependency conflicts.</p>
+    </div>
+  </section>
+
+
+  <!-- Chapter 3: Source Maps -->
+  <section class="chapter" id="sourcemaps">
+    <div class="chapter-head">
+      <span class="chapter-num">03</span>
+      <h2>Source Maps &mdash; The Debugging Bridge</h2>
+    </div>
+
+    <p>When you bundle 4,756 files into one, debugging becomes impossible. An error at line 14,322 of <code>cli.js</code> tells you nothing. <strong>Source maps</strong> solve this by mapping bundled positions back to original files.</p>
+
+    <div class="diagram">
+      <div class="diagram-label">How source maps work</div>
+      <pre><code><span class="accent">cli.js</span> line 14322, col 8
+      <span class="dim">│</span>
+      <span class="dim">│  source map lookup</span>
+      <span class="dim">▼</span>
+<span class="green">src/tools/BashTool.tsx</span> line 47, col 4</code></pre>
+    </div>
+
+    <p>A source map is a JSON file with this structure:</p>
+
+    <pre><code>{
+  <span class="key">"version"</span>: <span class="num">3</span>,
+  <span class="key">"sources"</span>: [                           <span class="cmt">// original file paths</span>
+    <span class="str">"../src/main.tsx"</span>,
+    <span class="str">"../src/tools/BashTool.tsx"</span>,
+    <span class="str">"../node_modules/react/index.js"</span>
+  ],
+  <span class="key">"sourcesContent"</span>: [                    <span class="cmt">// full source of each file (!)</span>
+    <span class="str">"import React from 'react';\n..."</span>,
+    <span class="str">"export function BashTool() {\n..."</span>,
+    <span class="str">"'use strict';\nvar React = ..."</span>
+  ],
+  <span class="key">"mappings"</span>: <span class="str">"AAAA,SAAS,QAAQ..."</span>,  <span class="cmt">// encoded position data</span>
+  <span class="key">"names"</span>: [<span class="str">"React"</span>, <span class="str">"useState"</span>, ...]   <span class="cmt">// variable names</span>
+}</code></pre>
+
+    <h3>Source map modes</h3>
+
+    <div class="tabs">
+      <div class="tab-buttons">
+        <button class="tab-btn active" onclick="showTab(this, 'sm-none')">none</button>
+        <button class="tab-btn" onclick="showTab(this, 'sm-external')">external</button>
+        <button class="tab-btn" onclick="showTab(this, 'sm-inline')">inline</button>
+        <button class="tab-btn" onclick="showTab(this, 'sm-hidden')">hidden</button>
+      </div>
+      <div class="tab-panel active" id="sm-none">
+        <pre><code>bun build --sourcemap=<span class="accent">none</span></code></pre>
+        <p>No source map generated. Smallest output. Stack traces reference the bundled file only. <strong>Best for production if you don't need debugging.</strong></p>
+      </div>
+      <div class="tab-panel" id="sm-external">
+        <pre><code>bun build --sourcemap=<span class="accent">external</span>
+<span class="cmt"># Produces: cli.js + cli.js.map</span>
+<span class="cmt"># cli.js ends with:</span>
+//# sourceMappingURL=cli.js.map</code></pre>
+        <p>Separate <code>.map</code> file. The bundle references it with a trailing comment. <strong>This is what Claude Code used &mdash; and the .map file got published.</strong></p>
+      </div>
+      <div class="tab-panel" id="sm-inline">
+        <pre><code>bun build --sourcemap=<span class="accent">inline</span>
+<span class="cmt"># cli.js ends with:</span>
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjoz...</code></pre>
+        <p>The entire source map is base64-encoded and appended to the bundle. Makes the JS file much larger. Useful for development only.</p>
+      </div>
+      <div class="tab-panel" id="sm-hidden">
+        <pre><code>bun build --sourcemap=<span class="accent">external</span>
+<span class="cmt"># Then strip the reference comment from cli.js</span>
+<span class="cmt"># Keep cli.js.map on your error tracking server only</span></code></pre>
+        <p>Generate the map but don't link it in the bundle. Upload it to an error tracking service (like Sentry) for server-side symbolication. The map never ships to users.</p>
+      </div>
+    </div>
+
+    <div class="callout callout-danger">
+      <div class="callout-label">The danger of sourcesContent</div>
+      <p>The <code>sourcesContent</code> field embeds the <strong>complete original source code</strong> of every file. If you publish a source map with this field, anyone can reconstruct your entire codebase with a simple script. This is exactly what happened with Claude Code.</p>
+    </div>
+  </section>
+
+
+  <!-- Chapter 4: package.json -->
+  <section class="chapter" id="package-json">
+    <div class="chapter-head">
+      <span class="chapter-num">04</span>
+      <h2>package.json &mdash; The Manifest</h2>
+    </div>
+
+    <p>Every npm package has a <code>package.json</code>. It's the single source of truth for what the package is, what it does, and how it connects to the ecosystem.</p>
+
+    <pre><code>{
+  <span class="cmt">// Identity</span>
+  <span class="key">"name"</span>: <span class="str">"@anthropic-ai/claude-code"</span>,  <span class="cmt">// scoped: @org/package</span>
+  <span class="key">"version"</span>: <span class="str">"2.1.88"</span>,                 <span class="cmt">// semver: major.minor.patch</span>
+  <span class="key">"description"</span>: <span class="str">"CLI for Claude AI"</span>,
+  <span class="key">"license"</span>: <span class="str">"SEE LICENSE IN README.md"</span>,
+
+  <span class="cmt">// Entry points</span>
+  <span class="key">"bin"</span>: { <span class="str">"claude"</span>: <span class="str">"cli.js"</span> },       <span class="cmt">// CLI executable</span>
+  <span class="key">"main"</span>: <span class="str">"index.js"</span>,                  <span class="cmt">// require('package')</span>
+  <span class="key">"module"</span>: <span class="str">"index.mjs"</span>,               <span class="cmt">// import from 'package'</span>
+  <span class="key">"type"</span>: <span class="str">"module"</span>,                    <span class="cmt">// ESM by default</span>
+
+  <span class="cmt">// Runtime requirements</span>
+  <span class="key">"engines"</span>: { <span class="str">"node"</span>: <span class="str">"&gt;=18.0.0"</span> },
+
+  <span class="cmt">// Dependencies (see chapter 8)</span>
+  <span class="key">"dependencies"</span>: {},
+  <span class="key">"optionalDependencies"</span>: {},
+  <span class="key">"devDependencies"</span>: {},
+
+  <span class="cmt">// Lifecycle scripts</span>
+  <span class="key">"scripts"</span>: {
+    <span class="str">"build"</span>: <span class="str">"bun build src/entrypoints/cli.tsx --outfile cli.js"</span>,
+    <span class="str">"test"</span>: <span class="str">"vitest"</span>,
+    <span class="str">"prepare"</span>: <span class="str">"..."</span>    <span class="cmt">// runs before publish</span>
+  },
+
+  <span class="cmt">// What files to include in the package</span>
+  <span class="key">"files"</span>: [<span class="str">"cli.js"</span>, <span class="str">"vendor/"</span>]        <span class="cmt">// &lt;-- Claude Code was MISSING this</span>
+}</code></pre>
+
+    <h3>Key fields explained</h3>
+
+    <h4>bin</h4>
+    <p>Maps command names to scripts. When installed globally, npm creates a symlink so you can type <code>claude</code> in your terminal:</p>
+    <pre><code><span class="dim">/usr/local/bin/</span><span class="accent">claude</span>  <span class="dim">→</span>  <span class="dim">/usr/local/lib/node_modules/@anthropic-ai/claude-code/</span><span class="accent">cli.js</span></code></pre>
+
+    <h4>type</h4>
+    <p>JavaScript has two module systems. This field picks the default:</p>
+    <table>
+      <thead><tr><th>Value</th><th>System</th><th>Syntax</th></tr></thead>
+      <tbody>
+        <tr><td><code>"module"</code></td><td>ESM (modern)</td><td><code>import x from 'y'</code></td></tr>
+        <tr><td><code>"commonjs"</code></td><td>CommonJS (legacy)</td><td><code>const x = require('y')</code></td></tr>
+      </tbody>
+    </table>
+
+    <h4>version (semver)</h4>
+    <p>Versions follow <strong>Semantic Versioning</strong>: <code>MAJOR.MINOR.PATCH</code></p>
+    <ul>
+      <li><strong>MAJOR</strong> (2.x.x) &mdash; Breaking changes. Your code may need updates.</li>
+      <li><strong>MINOR</strong> (x.1.x) &mdash; New features, backwards compatible.</li>
+      <li><strong>PATCH</strong> (x.x.88) &mdash; Bug fixes only.</li>
+    </ul>
+  </section>
+
+
+  <!-- Chapter 5: npm pack -->
+  <section class="chapter" id="npm-pack">
+    <div class="chapter-head">
+      <span class="chapter-num">05</span>
+      <h2>npm pack &mdash; What Goes in the Box</h2>
+    </div>
+
+    <p><code>npm pack</code> creates the tarball (<code>.tgz</code> archive) that gets uploaded to the registry. This is the critical step where you control <strong>what ships to users</strong>.</p>
+
+    <h3>File selection priority</h3>
+
+    <p>npm uses the <strong>first</strong> mechanism it finds:</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <p><strong><code>"files"</code> field in package.json</strong> &mdash; An <strong>allowlist</strong>. Only listed files/dirs are included. This is the most secure approach. <code>package.json</code>, <code>README</code>, and <code>LICENSE</code> are always included regardless.</p>
+        <pre><code><span class="key">"files"</span>: [<span class="str">"cli.js"</span>, <span class="str">"sdk-tools.d.ts"</span>, <span class="str">"vendor/"</span>]</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <p><strong><code>.npmignore</code> file</strong> &mdash; A <strong>denylist</strong>, like <code>.gitignore</code> but for npm. Files matching these patterns are excluded.</p>
+        <pre><code>*.map
+*.test.ts
+src/
+tsconfig.json</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <p><strong><code>.gitignore</code> fallback</strong> &mdash; If neither <code>"files"</code> nor <code>.npmignore</code> exists, npm uses <code>.gitignore</code> to decide what to exclude.</p>
+      </div>
+    </div>
+
+    <div class="comparison">
+      <div class="compare-card good">
+        <h4>Allowlist (safe)</h4>
+        <pre><code><span class="cmt">// package.json</span>
+<span class="key">"files"</span>: [
+  <span class="str">"cli.js"</span>,
+  <span class="str">"vendor/"</span>
+]</code></pre>
+        <p>Only what you list gets in. New files are excluded by default. Explicit. Safe.</p>
+      </div>
+      <div class="compare-card bad">
+        <h4>No filter (dangerous)</h4>
+        <pre><code><span class="cmt">// package.json</span>
+<span class="cmt">// no "files" field</span>
+
+<span class="cmt">// no .npmignore</span>
+
+<span class="cmt">// → EVERYTHING ships</span></code></pre>
+        <p>Every file in the directory goes into the tarball. Source maps, env files, tests &mdash; all of it.</p>
+      </div>
+    </div>
+
+    <h3>Preview before publishing</h3>
+
+    <pre><code><span class="cmt"># See what would be packed without creating the tarball</span>
+$ npm pack --dry-run
+
+<span class="dim">npm notice Tarball Contents</span>
+<span class="dim">npm notice 13.0MB  cli.js</span>
+<span class="dim">npm notice 59.8MB  cli.js.map</span>      <span class="cmt"># ← you'd see this and catch it</span>
+<span class="dim">npm notice 1.2kB   package.json</span></code></pre>
+
+    <div class="callout callout-success">
+      <div class="callout-label">Best practice</div>
+      <p>Always use the <code>"files"</code> allowlist in <code>package.json</code>. Always run <code>npm pack --dry-run</code> before publishing. Add it as a CI check.</p>
+    </div>
+  </section>
+
+
+  <!-- Chapter 6: npm publish -->
+  <section class="chapter" id="npm-publish">
+    <div class="chapter-head">
+      <span class="chapter-num">06</span>
+      <h2>npm publish &mdash; Shipping to the World</h2>
+    </div>
+
+    <p>Publishing uploads your tarball to the npm registry, making it available to anyone via <code>npm install</code>.</p>
+
+    <div class="flow">
+      <div class="flow-box">npm publish</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-box">run "prepare" script</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-box">npm pack (create .tgz)</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-box highlight">upload to registry</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-box success">available to install</div>
+    </div>
+
+    <h3>Lifecycle scripts</h3>
+
+    <p>npm runs scripts at specific moments during publish:</p>
+
+    <table>
+      <thead><tr><th>Script</th><th>When</th><th>Common use</th></tr></thead>
+      <tbody>
+        <tr><td><code>prepublishOnly</code></td><td>Before pack, only on publish</td><td>Run tests, lint</td></tr>
+        <tr><td><code>prepare</code></td><td>Before pack (and after install)</td><td>Build step, safety checks</td></tr>
+        <tr><td><code>prepack</code></td><td>Before tarball is created</td><td>Generate types</td></tr>
+        <tr><td><code>postpack</code></td><td>After tarball is created</td><td>Cleanup</td></tr>
+        <tr><td><code>postpublish</code></td><td>After upload</td><td>Notifications</td></tr>
+      </tbody>
+    </table>
+
+    <p>Claude Code uses <code>prepare</code> as a publishing guard:</p>
+
+    <pre><code><span class="key">"prepare"</span>: <span class="str">"node -e \"if (!process.env.AUTHORIZED) { console.error('ERROR: Direct publishing is not allowed.'); process.exit(1); }\""</span></code></pre>
+
+    <p>This prevents a developer from accidentally running <code>npm publish</code> from their laptop. Only their CI/CD pipeline (which sets <code>AUTHORIZED=1</code>) can publish.</p>
+
+    <h3>Scoped packages</h3>
+
+    <p>The <code>@anthropic-ai/</code> prefix is a <strong>scope</strong>. It namespaces packages to an organization:</p>
+
+    <pre><code><span class="accent">@anthropic-ai</span>/claude-code    <span class="cmt"># Anthropic owns this scope</span>
+<span class="accent">@types</span>/react                  <span class="cmt"># DefinitelyTyped types</span>
+<span class="accent">@img</span>/sharp-linux-x64           <span class="cmt"># Sharp image library</span>
+<span class="accent">lodash</span>                        <span class="cmt"># unscoped (anyone can publish)</span></code></pre>
+  </section>
+
+
+  <!-- Chapter 7: npm install -->
+  <section class="chapter" id="npm-install">
+    <div class="chapter-head">
+      <span class="chapter-num">07</span>
+      <h2>npm install &mdash; The Consumer Side</h2>
+    </div>
+
+    <p>When someone runs <code>npm install -g @anthropic-ai/claude-code</code>, here's what happens:</p>
+
+    <div class="diagram">
+      <div class="diagram-label">Installation flow</div>
+      <pre><code>$ npm install -g @anthropic-ai/claude-code
+  <span class="dim">│</span>
+  <span class="dim">├─</span> <span class="num">1.</span> <span class="fn">GET</span> registry.npmjs.org/@anthropic-ai/claude-code
+  <span class="dim">│</span>     <span class="dim">→ metadata: version, tarball URL, dependencies</span>
+  <span class="dim">│</span>
+  <span class="dim">├─</span> <span class="num">2.</span> Download tarball (<span class="accent">31.2 MB</span> compressed)
+  <span class="dim">│</span>
+  <span class="dim">├─</span> <span class="num">3.</span> Extract to <span class="str">/usr/local/lib/node_modules/@anthropic-ai/claude-code/</span>
+  <span class="dim">│</span>     <span class="dim">→ 20 files, 102.8 MB</span>
+  <span class="dim">│</span>     <span class="dim">→ includes cli.js.map (the leaked source)</span>
+  <span class="dim">│</span>
+  <span class="dim">├─</span> <span class="num">4.</span> Install <span class="type">optionalDependencies</span>
+  <span class="dim">│</span>     <span class="dim">→ @img/sharp-linux-x64 (matches this platform)</span>
+  <span class="dim">│</span>     <span class="dim">→ @img/sharp-darwin-arm64 (skipped: wrong platform)</span>
+  <span class="dim">│</span>
+  <span class="dim">└─</span> <span class="num">5.</span> Create symlink
+        <span class="accent">/usr/local/bin/claude</span> → <span class="str">cli.js</span></code></pre>
+    </div>
+
+    <h3>Global vs local install</h3>
+
+    <table>
+      <thead><tr><th>Command</th><th>Where</th><th>Use case</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>npm install -g pkg</code></td>
+          <td>System-wide (<code>/usr/local/</code>)</td>
+          <td>CLI tools you run from anywhere</td>
+        </tr>
+        <tr>
+          <td><code>npm install pkg</code></td>
+          <td>Project-local (<code>./node_modules/</code>)</td>
+          <td>Libraries used in your code</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>The node_modules directory</h3>
+
+    <p><code>node_modules/</code> is where npm puts installed packages. It's a flat directory (since npm v3) where each package gets its own folder:</p>
+
+    <pre><code><span class="dim">node_modules/</span>
+  <span class="dim">@anthropic-ai/</span>
+    <span class="dim">claude-code/</span>
+      <span class="accent">cli.js</span>
+      <span class="accent">cli.js.map</span>        <span class="cmt"># anyone can read this</span>
+      <span class="accent">package.json</span>
+      <span class="dim">vendor/</span>
+        <span class="dim">ripgrep/</span>
+        <span class="dim">audio-capture/</span>
+  <span class="dim">@img/</span>
+    <span class="dim">sharp-linux-x64/</span>    <span class="cmt"># optional dep (only on Linux x64)</span></code></pre>
+  </section>
+
+
+  <!-- Chapter 8: Dependencies -->
+  <section class="chapter" id="dependencies">
+    <div class="chapter-head">
+      <span class="chapter-num">08</span>
+      <h2>Dependencies &mdash; The Dependency Graph</h2>
+    </div>
+
+    <p>Dependencies are other packages your code needs. There are three types, and understanding them is critical:</p>
+
+    <table>
+      <thead><tr><th>Type</th><th>When installed</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong><code>dependencies</code></strong></td>
+          <td>Always (by you AND your consumers)</td>
+          <td>Code needed at runtime</td>
+        </tr>
+        <tr>
+          <td><strong><code>devDependencies</code></strong></td>
+          <td>Only during development</td>
+          <td>Testing, building, linting tools</td>
+        </tr>
+        <tr>
+          <td><strong><code>optionalDependencies</code></strong></td>
+          <td>If possible (failures are OK)</td>
+          <td>Platform-specific native code</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Claude Code's strategy: zero dependencies</h3>
+
+    <pre><code><span class="key">"dependencies"</span>: {},                    <span class="cmt">// nothing!</span>
+<span class="key">"optionalDependencies"</span>: {
+  <span class="str">"@img/sharp-darwin-arm64"</span>: <span class="str">"^0.34.2"</span>, <span class="cmt">// image processing</span>
+  <span class="str">"@img/sharp-linux-x64"</span>: <span class="str">"^0.34.2"</span>,
+  <span class="cmt">// ... 7 more platforms</span>
+}</code></pre>
+
+    <p>Because <em>everything</em> is bundled into <code>cli.js</code>, there are no runtime dependencies. This means:</p>
+    <ul>
+      <li>No dependency conflicts with other packages on your system</li>
+      <li>No supply-chain attacks via transitive dependencies</li>
+      <li>No version resolution issues</li>
+      <li>Installs in seconds (just one download)</li>
+    </ul>
+
+    <p>The <code>sharp</code> libraries are optional because they're <strong>native binaries</strong> (compiled C/C++) that differ per OS and CPU architecture. npm only installs the one matching your system.</p>
+
+    <h3>Version ranges</h3>
+
+    <p>Dependencies use <strong>semver ranges</strong> to specify which versions are acceptable:</p>
+
+    <table>
+      <thead><tr><th>Syntax</th><th>Meaning</th><th>Example range</th></tr></thead>
+      <tbody>
+        <tr><td><code>^0.34.2</code></td><td>Compatible (same major)</td><td>0.34.2 &le; v &lt; 0.35.0</td></tr>
+        <tr><td><code>~0.34.2</code></td><td>Patch updates only</td><td>0.34.2 &le; v &lt; 0.35.0</td></tr>
+        <tr><td><code>0.34.2</code></td><td>Exact version</td><td>Only 0.34.2</td></tr>
+        <tr><td><code>*</code></td><td>Any version</td><td>Anything</td></tr>
+        <tr><td><code>&gt;=18.0.0</code></td><td>Minimum version</td><td>18.0.0 and above</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Lock files</h3>
+
+    <p>A lock file records the <em>exact</em> versions that were installed, so every developer (and CI) gets identical dependencies:</p>
+
+    <table>
+      <thead><tr><th>Tool</th><th>Lock file</th></tr></thead>
+      <tbody>
+        <tr><td>npm</td><td><code>package-lock.json</code></td></tr>
+        <tr><td>yarn</td><td><code>yarn.lock</code></td></tr>
+        <tr><td>pnpm</td><td><code>pnpm-lock.yaml</code></td></tr>
+        <tr><td>bun</td><td><code>bun.lock</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-info">
+      <div class="callout-label">Spotted in the package</div>
+      <p>Claude Code ships a <code>bun.lock</code> in the published package &mdash; this reveals they use Bun as their package manager and build tool. It shouldn't be in the published package (another file that should've been excluded).</p>
+    </div>
+  </section>
+
+
+  <!-- Chapter 9: Case Study -->
+  <section class="chapter" id="case-study">
+    <div class="chapter-head">
+      <span class="chapter-num">09</span>
+      <h2>Case Study &mdash; The Claude Code Leak</h2>
+    </div>
+
+    <p>Let's put it all together. Here's exactly how Anthropic's closed-source CLI had its full source code leaked via a 60MB source map in a public npm package.</p>
+
+    <div class="diagram">
+      <div class="diagram-label">The leak chain</div>
+      <pre><code><span class="accent">DEVELOPMENT</span>                        <span class="accent">BUILD</span>                         <span class="accent">PUBLISH</span>
+
+ 2,374 TypeScript files              Bun bundler                    npm pack
+ in private repo                     with --sourcemap=external
+                                                                    no "files" field
+ src/main.tsx  ─────┐                                               no .npmignore
+ src/tools/*   ─────┤           ┌─ cli.js      (13 MB)  ──┐
+ src/services/*─────┼── build ──┤                          ├── pack ── <span class="type">publish</span>
+ node_modules/* ────┤           └─ <span class="red">cli.js.map</span>  (60 MB)  ──┘
+ (4,756 files) ─────┘               <span class="dim">▲</span>                         <span class="dim">▲</span>
+                                     <span class="dim">│</span>                         <span class="dim">│</span>
+                               <span class="red">contains full</span>            <span class="red">no filter =</span>
+                               <span class="red">sourcesContent</span>           <span class="red">everything ships</span>
+
+
+<span class="accent">RESULT</span>: Anyone can run this to extract the full source:
+
+ $ npm pack @anthropic-ai/claude-code
+ $ tar xzf *.tgz
+ $ node -e "
+     const sm = JSON.parse(fs.readFileSync('package/cli.js.map'));
+     sm.sources.forEach((path, i) => {
+       fs.mkdirSync(dirname(path), { recursive: true });
+       fs.writeFileSync(path, sm.sourcesContent[i]);
+     });
+   "
+ <span class="green">→ 4,756 files, 64 MB of readable source code</span></code></pre>
+    </div>
+
+    <h3>What was exposed</h3>
+
+    <table>
+      <thead><tr><th>Category</th><th>Count</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td>Application source</td><td>1,332 .ts + 552 .tsx</td><td>All tools, services, components, commands</td></tr>
+        <tr><td>Internal packages</td><td>~50 from <code>@ant/*</code></td><td>Chrome MCP, computer-use MCP</td></tr>
+        <tr><td>Dependencies source</td><td>2,850 files</td><td>All bundled node_modules</td></tr>
+        <tr><td>Architecture</td><td>Full</td><td>State management, API layer, auth flow</td></tr>
+        <tr><td>Unreleased features</td><td>Dozens</td><td>Commands gated behind feature flags</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Root cause</h3>
+
+    <p>Three missing safeguards, any one of which would have prevented the leak:</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <p><strong>No <code>"files"</code> allowlist</strong> in package.json &mdash; so npm included everything in the build directory.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <p><strong>No <code>.npmignore</code></strong> &mdash; no denylist to catch the <code>.map</code> file.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <p><strong>No CI check</strong> to verify the tarball contents before publishing (e.g., <code>npm pack --dry-run</code> and assert no <code>.map</code> files).</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Chapter 10: Prevention -->
+  <section class="chapter" id="prevention">
+    <div class="chapter-head">
+      <span class="chapter-num">10</span>
+      <h2>Prevention &mdash; How to Not Leak Your Source</h2>
+    </div>
+
+    <h3>The checklist</h3>
+
+    <div class="callout callout-success">
+      <div class="callout-label">Before every publish</div>
+      <ol>
+        <li>Use <code>"files"</code> allowlist in <code>package.json</code> &mdash; not <code>.npmignore</code></li>
+        <li>Build with <code>--sourcemap=none</code> for production, or use <code>--sourcemap=hidden</code> and upload maps to your error tracker only</li>
+        <li>Run <code>npm pack --dry-run</code> in CI and fail if unexpected files appear</li>
+        <li>Check unpacked size &mdash; if it's way bigger than expected, investigate</li>
+        <li>Never include: <code>.map</code>, <code>.env</code>, lock files, test files, source directories</li>
+      </ol>
+    </div>
+
+    <h3>Secure package.json template</h3>
+
+    <pre><code>{
+  <span class="key">"name"</span>: <span class="str">"@your-org/your-package"</span>,
+  <span class="key">"version"</span>: <span class="str">"1.0.0"</span>,
+  <span class="key">"files"</span>: [
+    <span class="str">"dist/"</span>,          <span class="cmt">// only the build output</span>
+    <span class="str">"!dist/**/*.map"</span>  <span class="cmt">// explicitly exclude source maps</span>
+  ],
+  <span class="key">"scripts"</span>: {
+    <span class="str">"build"</span>: <span class="str">"bun build src/index.ts --outfile dist/index.js --sourcemap=none"</span>,
+    <span class="str">"prepublishOnly"</span>: <span class="str">"npm run build && npm pack --dry-run"</span>
+  }
+}</code></pre>
+
+    <h3>CI check script</h3>
+
+    <pre><code><span class="cmt">#!/bin/bash</span>
+<span class="cmt"># Add to your CI pipeline before npm publish</span>
+
+<span class="kw">echo</span> <span class="str">"Checking package contents..."</span>
+npm pack --dry-run <span class="num">2</span>&gt;&amp;<span class="num">1</span> | tee /tmp/pack-contents.txt
+
+<span class="cmt"># Fail if any source maps are included</span>
+<span class="kw">if</span> grep -q <span class="str">'\.map'</span> /tmp/pack-contents.txt; <span class="kw">then</span>
+  <span class="kw">echo</span> <span class="str">"ERROR: Source maps detected in package!"</span>
+  exit <span class="num">1</span>
+<span class="kw">fi</span>
+
+<span class="cmt"># Fail if .env or credentials files are included</span>
+<span class="kw">if</span> grep -qE <span class="str">'\.env|credentials|\.key'</span> /tmp/pack-contents.txt; <span class="kw">then</span>
+  <span class="kw">echo</span> <span class="str">"ERROR: Sensitive files detected in package!"</span>
+  exit <span class="num">1</span>
+<span class="kw">fi</span>
+
+<span class="kw">echo</span> <span class="str">"Package contents look clean."</span></code></pre>
+  </section>
+
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-left">
+      <p>Built as a learning document &mdash; based on the analysis of <code>@anthropic-ai/claude-code@2.1.88</code></p>
+    </div>
+    <div class="footer-sqli">SQLI &mdash; March 2026</div>
+  </footer>
+
+</div>
+
+<script>
+  function showTab(btn, panelId) {
+    const tabs = btn.closest('.tabs');
+    tabs.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    tabs.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(panelId).classList.add('active');
+  }
+
+  // Smooth scroll for TOC links
+  document.querySelectorAll('.toc a').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+
+</body>
+</html>

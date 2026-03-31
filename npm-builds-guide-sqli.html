@@ -4,10 +4,55 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SQLI Knowledge Base — From Source to npm: The Claude Code Source Leak</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="apple-touch-icon" href="favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
+    @font-face {
+      font-family: 'TWK Everett';
+      src: url('brand/fonts/TWKEverett-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'TWK Everett';
+      src: url('brand/fonts/TWKEverett-RegularItalic.ttf') format('truetype');
+      font-weight: 400;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'TWK Everett';
+      src: url('brand/fonts/TWKEverett-Medium.ttf') format('truetype');
+      font-weight: 500;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'TWK Everett';
+      src: url('brand/fonts/TWKEverett-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'TWK Everett';
+      src: url('brand/fonts/TWKEverett-Light.ttf') format('truetype');
+      font-weight: 300;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'TWK Everett';
+      src: url('brand/fonts/TWKEverett-LightItalic.ttf') format('truetype');
+      font-weight: 300;
+      font-style: italic;
+      font-display: swap;
+    }
     :root {
       --sqli-cream: #FFFAF0;
       --sqli-midnight: #0F0E2B;
@@ -49,6 +94,7 @@
       background: var(--bg);
       color: var(--text);
       font-family: var(--font-body);
+      font-weight: 300;
       line-height: 1.75;
       font-size: 16.5px;
       -webkit-font-smoothing: antialiased;
@@ -62,67 +108,74 @@
 
     /* ── Layout ── */
     .page {
-      max-width: 900px;
+      max-width: 1080px;
       margin: 0 auto;
-      padding: var(--space-lg) var(--space-lg) var(--space-2xl);
+      padding: var(--space-xl) var(--space-xl) var(--space-2xl);
+    }
+
+    /* ── Topbar (sticky) ── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--sqli-midnight);
+    }
+
+    .topbar-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: var(--space-md) var(--space-xl);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
     /* ── Header ── */
     .hero {
-      padding: var(--space-2xl) 0 var(--space-xl);
-      position: relative;
+      background: var(--sqli-midnight);
+      padding: 0;
     }
 
-    .hero::after {
-      content: '';
-      display: block;
-      width: 100%;
-      height: 2px;
-      background: linear-gradient(90deg, var(--sqli-midnight) 0%, var(--sqli-sky) 40%, transparent 100%);
-      margin-top: var(--space-xl);
+    .hero-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: var(--space-2xl) var(--space-xl) var(--space-2xl);
+    }
+
+    .hero-logo {
+      height: 36px;
     }
 
     .hero-org {
       font-family: var(--font-body);
-      font-weight: 700;
-      font-size: 0.7rem;
+      font-weight: 500;
+      font-size: 0.65rem;
       letter-spacing: 0.2em;
       text-transform: uppercase;
-      color: var(--sqli-cobalt);
-      margin-bottom: var(--space-lg);
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-    }
-
-    .hero-org::before {
-      content: '';
-      display: inline-block;
-      width: 24px;
-      height: 2px;
-      background: var(--sqli-cobalt);
+      color: var(--sqli-sky);
     }
 
     .hero h1 {
       font-family: var(--font-display);
-      font-size: clamp(2.4rem, 5vw, 3.4rem);
-      font-weight: 400;
-      line-height: 1.12;
+      font-size: clamp(2.6rem, 5vw, 3.8rem);
+      font-weight: 300;
+      line-height: 1.1;
       letter-spacing: -0.02em;
-      color: var(--sqli-midnight);
+      color: var(--sqli-cream);
       margin-bottom: var(--space-md);
     }
 
     .hero h1 em {
       font-style: italic;
-      color: var(--sqli-cobalt);
+      color: var(--sqli-sky);
     }
 
     .hero-sub {
       font-size: 1.05rem;
-      color: var(--text-muted);
-      max-width: 560px;
+      color: #FFFAF0AA;
+      max-width: 600px;
       line-height: 1.7;
+      font-weight: 300;
     }
 
     /* ── Table of Contents ── */
@@ -264,7 +317,7 @@
     a { color: var(--sqli-cobalt); text-decoration: none; border-bottom: 1px solid var(--sqli-cobalt); }
     a:hover { border-bottom-color: transparent; }
 
-    strong { color: var(--text); font-weight: 600; }
+    strong { color: var(--text); font-weight: 500; }
 
     /* ── Code ── */
     pre {
@@ -562,71 +615,81 @@
 
     /* ── Footer ── */
     .footer {
-      padding-top: var(--space-xl);
-      position: relative;
-      color: var(--text-muted);
-      font-size: 0.82rem;
+      background: var(--sqli-midnight);
+      padding: 0;
+    }
+
+    .footer-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: var(--space-xl) var(--space-xl);
       display: flex;
       justify-content: space-between;
-      align-items: flex-end;
+      align-items: center;
     }
 
-    .footer::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--sqli-midnight) 0%, var(--sqli-sky) 40%, transparent 100%);
+    .footer-left p {
+      margin-bottom: 0;
+      color: #FFFAF088;
+      font-size: 0.82rem;
     }
 
-    .footer-left p { margin-bottom: 0.2rem; }
+    .footer-left code {
+      background: #FFFAF010;
+      color: var(--sqli-sky);
+      border-color: #FFFAF020;
+    }
 
-    .footer-sqli {
-      font-family: var(--font-body);
-      font-weight: 700;
-      font-size: 0.65rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--sqli-midnight);
+    .footer-logo {
+      height: 22px;
     }
 
     /* ── Responsive ── */
     @media (max-width: 640px) {
+      .topbar-inner { padding: var(--space-sm) var(--space-md); }
+      .hero-inner { padding: var(--space-xl) var(--space-md) var(--space-xl); }
       .hero h1 { font-size: 1.8rem; }
       .toc ol { grid-template-columns: 1fr; }
       .comparison { grid-template-columns: 1fr; }
-      .page { padding: var(--space-md); }
+      .page { padding: var(--space-md) var(--space-md); }
       .flow { flex-direction: column; }
       .flow-arrow { transform: rotate(90deg); }
-      .footer { flex-direction: column; gap: var(--space-md); align-items: flex-start; }
+      .footer-inner { flex-direction: column; gap: var(--space-md); align-items: flex-start; padding: var(--space-lg) var(--space-md); }
     }
 
     /* ── Scrollbar ── */
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #0F0E2B22; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #0F0E2B44; }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--sqli-cream); }
+    ::-webkit-scrollbar-thumb { background: #0F0E2B33; border-radius: 5px; }
+    ::-webkit-scrollbar-thumb:hover { background: #0F0E2B55; }
 
     /* ── Print ── */
     @media print {
       body { font-size: 11pt; }
-      .hero { padding: 1rem 0; }
+      .hero-inner { padding: 1rem; }
       pre, .diagram { break-inside: avoid; }
     }
   </style>
 </head>
 <body>
 
-<div class="page">
+<!-- Topbar (sticky) -->
+<nav class="topbar">
+  <div class="topbar-inner">
+    <img src="brand/logos/Logo_cream.png" alt="SQLI" class="hero-logo">
+    <div class="hero-org">Knowledge Base</div>
+  </div>
+</nav>
 
-  <!-- Hero -->
-  <header class="hero">
-    <div class="hero-org">SQLI Knowledge Base</div>
+<!-- Hero -->
+<header class="hero">
+  <div class="hero-inner">
     <h1>From Source <em>to npm</em></h1>
     <p class="hero-sub">How JavaScript gets built, packed, and shipped &mdash; explained through a real-world case study of a leaked source map.</p>
-  </header>
+  </div>
+</header>
+
+<div class="page">
 
   <!-- Intro: The Incident -->
   <section class="incident">
@@ -640,11 +703,6 @@
     <p>Claude Code is a closed-source CLI tool distributed via npm as <code>@anthropic-ai/claude-code</code>. The published package contains a single bundled JavaScript file (<code>cli.js</code>, 13 MB) that runs the entire application. This is standard practice: the original TypeScript source code is compiled and bundled, and only the output ships to users.</p>
 
     <p>Except they also shipped <code>cli.js.map</code> &mdash; a <strong>59.8 MB source map</strong> with the <code>sourcesContent</code> field populated. That field embeds the <em>full original text</em> of every source file. A simple script extracted all <strong>4,756 files</strong> (2,374 of Anthropic's own TypeScript/TSX code, plus 2,850 dependency files) &mdash; 64 MB of perfectly readable source.</p>
-
-    <div class="callout callout-danger">
-      <div class="callout-label">Root cause</div>
-      <p>The <code>package.json</code> had <strong>no <code>"files"</code> allowlist</strong> and there was <strong>no <code>.npmignore</code></strong> file. npm's default behavior is to include everything in the build directory. The source map, generated by Bun's bundler for debugging, simply rode along into the published tarball unnoticed.</p>
-    </div>
 
     <p>The leak exposed the full application architecture: the tool system, API communication layer, multi-agent orchestration, prompt templates, analytics integrations, unreleased feature flags, and internal Anthropic packages (<code>@ant/*</code>). All from a single missing configuration line.</p>
 
@@ -1348,15 +1406,18 @@ npm pack --dry-run <span class="num">2</span>&gt;&amp;<span class="num">1</span>
   </section>
 
 
-  <!-- Footer -->
-  <footer class="footer">
+
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-inner">
     <div class="footer-left">
       <p>Built as a learning document &mdash; based on the analysis of <code>@anthropic-ai/claude-code@2.1.88</code></p>
     </div>
-    <div class="footer-sqli">SQLI &mdash; March 2026</div>
-  </footer>
-
-</div>
+    <div><img src="brand/logos/Logo_cream.png" alt="SQLI" class="footer-logo"></div>
+  </div>
+</footer>
 
 <script>
   function showTab(btn, panelId) {

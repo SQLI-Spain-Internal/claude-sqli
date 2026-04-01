@@ -353,27 +353,31 @@
   <h2>The agent operates across the full lifecycle</h2>
   <div class="divider"></div>
 
-  <!-- Five editorial columns -->
+  <!-- Six editorial columns -->
   <div style="display:flex;gap:0;margin-top:2.5rem;border-bottom:2px solid var(--midnight);">
-    <div style="flex:1;padding:0 1.5rem 1.5rem 0;border-right:1px solid rgba(15,14,43,0.1);">
-      <h3 style="font-size:1.6rem;font-weight:500;margin-bottom:0.5rem;">Plan</h3>
-      <p style="font-size:0.88rem;opacity:0.55;line-height:1.5;">Reads Jira epics, decomposes into sprint-ready tasks</p>
+    <div style="flex:1;padding:0 1.2rem 1.5rem 0;border-right:1px solid rgba(15,14,43,0.1);">
+      <h3 style="font-size:1.4rem;font-weight:500;margin-bottom:0.5rem;">Plan</h3>
+      <p style="font-size:0.85rem;opacity:0.55;line-height:1.5;">Reads Jira epics, decomposes into sprint-ready tasks</p>
     </div>
-    <div style="flex:1;padding:0 1.5rem 1.5rem 1.5rem;border-right:1px solid rgba(15,14,43,0.1);">
-      <h3 style="font-size:1.6rem;font-weight:500;margin-bottom:0.5rem;">Build</h3>
-      <p style="font-size:0.88rem;opacity:0.55;line-height:1.5;">Scaffolds code, generates Terraform modules</p>
+    <div style="flex:1;padding:0 1.2rem 1.5rem 1.2rem;border-right:1px solid rgba(15,14,43,0.1);">
+      <h3 style="font-size:1.4rem;font-weight:500;margin-bottom:0.5rem;">Build</h3>
+      <p style="font-size:0.85rem;opacity:0.55;line-height:1.5;">Scaffolds code, generates Terraform modules</p>
     </div>
-    <div style="flex:1;padding:0 1.5rem 1.5rem 1.5rem;border-right:1px solid rgba(15,14,43,0.1);">
-      <h3 style="font-size:1.6rem;font-weight:500;margin-bottom:0.5rem;">Test</h3>
-      <p style="font-size:0.88rem;opacity:0.55;line-height:1.5;">Generates test skeletons, runs quality gates</p>
+    <div style="flex:1;padding:0 1.2rem 1.5rem 1.2rem;border-right:1px solid rgba(15,14,43,0.1);">
+      <h3 style="font-size:1.4rem;font-weight:500;margin-bottom:0.5rem;">Test</h3>
+      <p style="font-size:0.85rem;opacity:0.55;line-height:1.5;">Test skeletons, quality gates, SAST</p>
     </div>
-    <div style="flex:1;padding:0 1.5rem 1.5rem 1.5rem;border-right:1px solid rgba(15,14,43,0.1);">
-      <h3 style="font-size:1.6rem;font-weight:500;margin-bottom:0.5rem;">Deploy</h3>
-      <p style="font-size:0.88rem;opacity:0.55;line-height:1.5;">CI/CD pipelines, infrastructure provisioning</p>
+    <div style="flex:1;padding:0 1.2rem 1.5rem 1.2rem;border-right:1px solid rgba(15,14,43,0.1);">
+      <h3 style="font-size:1.4rem;font-weight:500;margin-bottom:0.5rem;">Deploy</h3>
+      <p style="font-size:0.85rem;opacity:0.55;line-height:1.5;">CI/CD pipelines, infra provisioning</p>
     </div>
-    <div style="flex:1;padding:0 0 1.5rem 1.5rem;">
-      <h3 style="font-size:1.6rem;font-weight:500;margin-bottom:0.5rem;">Document</h3>
-      <p style="font-size:0.88rem;opacity:0.55;line-height:1.5;">Status reports, ADRs, Confluence pages</p>
+    <div style="flex:1;padding:0 1.2rem 1.5rem 1.2rem;border-right:1px solid rgba(15,14,43,0.1);">
+      <h3 style="font-size:1.4rem;font-weight:500;margin-bottom:0.5rem;">Monitor</h3>
+      <p style="font-size:0.85rem;opacity:0.55;line-height:1.5;">Dashboards, alerting, anomaly detection</p>
+    </div>
+    <div style="flex:1;padding:0 0 1.5rem 1.2rem;">
+      <h3 style="font-size:1.4rem;font-weight:500;margin-bottom:0.5rem;">Document</h3>
+      <p style="font-size:0.85rem;opacity:0.55;line-height:1.5;">Status reports, ADRs, Confluence pages</p>
     </div>
   </div>
 
@@ -453,7 +457,7 @@
   <h2>Ownership, not templates</h2>
   <div class="divider"></div>
   <p class="lead">SQLI owns and operates the full toolchain centrally. Consistency comes from shared infrastructure and a shared agent.</p>
-  <div style="display:flex;gap:5rem;margin-top:3rem;">
+  <div style="display:flex;gap:3.5rem;margin-top:3rem;">
     <div>
       <p style="font-size:0.72rem;font-weight:500;text-transform:uppercase;letter-spacing:0.12em;color:var(--cobalt);margin-bottom:0.5rem;">Project Management</p>
       <h3 style="font-size:1.3rem;">SQLI's Atlassian</h3>
@@ -468,6 +472,11 @@
       <p style="font-size:0.72rem;font-weight:500;text-transform:uppercase;letter-spacing:0.12em;color:var(--cobalt);margin-bottom:0.5rem;">Infrastructure</p>
       <h3 style="font-size:1.3rem;">SQLI's Azure</h3>
       <p style="font-size:0.92rem;opacity:0.6;margin-top:0.4rem;line-height:1.55;">Every client's infra on SQLI's subscriptions.<br>Terraform modules, managed identities.</p>
+    </div>
+    <div>
+      <p style="font-size:0.72rem;font-weight:500;text-transform:uppercase;letter-spacing:0.12em;color:var(--cobalt);margin-bottom:0.5rem;">Monitoring</p>
+      <h3 style="font-size:1.3rem;">SQLI's Datadog</h3>
+      <p style="font-size:0.92rem;opacity:0.6;margin-top:0.4rem;line-height:1.55;">Every client's observability centralized.<br>Dashboards, APM, alerting.</p>
     </div>
   </div>
 </div>

@@ -565,54 +565,6 @@
   <p style="margin-top:1.5rem;font-size:0.85rem;opacity:0.4;">All three modes work on the same platform. Adoption is gradual.</p>
 </div>
 
-<!-- ═══════════════ S6: ARCHITECTURE — Midnight ═══════════════ -->
-<div class="slide bg-midnight" id="s6">
-  <div class="section-label">Architecture</div>
-  <h2>Three layers, one substrate</h2>
-  <div class="divider"></div>
-  <p class="lead" style="margin-bottom:2rem;">Knowledge, connections, and skills &mdash; versioned in Git, consumed by every plane. The substrate is the investment that compounds across engagements; the planes are how it&rsquo;s executed.</p>
-  <div class="cols-2">
-    <div>
-      <div class="card" style="margin-bottom:1rem;">
-        <div style="display:flex;gap:1rem;align-items:baseline;">
-          <span style="font-size:1.4rem;font-weight:700;color:var(--sky);">1</span>
-          <div><h3>The Repo <span style="font-weight:300;opacity:0.5;">(Knowledge)</span></h3>
-          <p>Infra modules, templates, architecture decisions, client context.</p></div>
-        </div>
-      </div>
-      <div class="card" style="margin-bottom:1rem;">
-        <div style="display:flex;gap:1rem;align-items:baseline;">
-          <span style="font-size:1.4rem;font-weight:700;color:var(--sky);">2</span>
-          <div><h3>MCPs <span style="font-weight:300;opacity:0.5;">(Connections)</span></h3>
-          <p>Live access to Jira, Confluence, GitHub, Azure. Read and write.</p></div>
-        </div>
-      </div>
-      <div class="card">
-        <div style="display:flex;gap:1rem;align-items:baseline;">
-          <span style="font-size:1.4rem;font-weight:700;color:var(--sky);">3</span>
-          <div><h3>Skills <span style="font-weight:300;opacity:0.5;">(Playbooks)</span></h3>
-          <p>Executable workflows: /new-client, /sprint-planner, /terraform-module.</p></div>
-        </div>
-      </div>
-    </div>
-    <div>
-      <div class="card">
-        <h3>The runtime is hosted, not built</h3>
-        <p>The orchestrator runs on a managed agent runtime — durable sessions, secure sandboxing, credential isolation. SQLI does not operate the runtime. What we own is the knowledge, the skills, and the engagement-agent identity for each client.</p>
-      </div>
-      <div class="card" style="margin-top:1.5rem;">
-        <h3>Why it scales</h3>
-        <ul>
-          <li>New pattern in the repo: every engagement team knows it immediately</li>
-          <li>New MCP connection: every agent controls a new tool</li>
-          <li>New skill: any team member can trigger it</li>
-          <li>New agent role: engagement teams compose without rebuilding</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- ═══════════════ S6b: THREE PLANES — Cream ═══════════════ -->
 <div class="slide bg-cream" id="s6b">
   <div class="section-label">Operating Model</div>
@@ -918,21 +870,17 @@
   <!-- Timeline bar -->
   <div style="margin-top:2.5rem;">
     <div style="display:flex;height:6px;border-radius:0;">
-      <div style="flex:14;background:var(--cobalt);"></div>
-      <div style="flex:8;background:var(--sky);opacity:0.7;"></div>
-      <div style="flex:4;background:var(--midnight);opacity:0.1;"></div>
+      <div style="flex:22;background:var(--cobalt);"></div>
+      <div style="flex:6;background:var(--midnight);opacity:0.1;"></div>
     </div>
 
     <!-- Week markers -->
     <div style="display:flex;margin-top:0.4rem;">
-      <div style="flex:14;display:flex;justify-content:space-between;">
+      <div style="flex:22;display:flex;justify-content:space-between;">
         <span style="font-size:0.68rem;font-weight:500;color:var(--cobalt);">Week 1</span>
         <span style="font-size:0.68rem;font-weight:500;color:var(--cobalt);">Week 14</span>
       </div>
-      <div style="flex:8;text-align:right;">
-        <span style="font-size:0.68rem;font-weight:300;opacity:0.4;">Week 22</span>
-      </div>
-      <div style="flex:4;text-align:right;">
+      <div style="flex:6;text-align:right;">
         <span style="font-size:0.68rem;font-weight:300;opacity:0.3;">TBD</span>
       </div>
     </div>
@@ -978,8 +926,8 @@
       <p style="margin-top:1.2rem;color:rgba(255,255,255,0.65);font-size:0.92rem;">Solo engineer with agentic AI for the POC. Scale the team after the model is validated.</p>
     </div>
     <div class="card">
-      <div class="stat"><div class="number">14+8</div><div class="label">Weeks: platform build + first client</div></div>
-      <p style="margin-top:1.2rem;color:rgba(255,255,255,0.65);font-size:0.92rem;">14 weeks for foundation and agent deepening. 8 weeks for Muta onboarding. Real delivery, not a demo.</p>
+      <div class="stat"><div class="number">14</div><div class="label">Weeks: platform build through first client live</div></div>
+      <p style="margin-top:1.2rem;color:rgba(255,255,255,0.65);font-size:0.92rem;">14 weeks from foundation through Muta live on the platform. Real delivery, not a demo.</p>
     </div>
     <div class="card">
       <div class="stat"><div class="number">Access</div><div class="label">Grants needed</div></div>
@@ -1008,7 +956,7 @@
 </div>
 
 <!-- ═══════════════ NAVIGATION ═══════════════ -->
-<div class="counter"><span id="cur">1</span> / <span id="tot">21</span></div>
+<div class="counter"><span id="cur">1</span> / <span id="tot">20</span></div>
 <div class="nav">
   <button onclick="go(-1)" title="Previous">&larr;</button>
   <button onclick="go(1)" title="Next">&rarr;</button>
